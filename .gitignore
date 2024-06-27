@@ -1,0 +1,9 @@
+fonts/*
+!fonts/.gitkeep
+
+*.aux
+*.log
+*.out
+*.gz
+*.toc
+*.swp
