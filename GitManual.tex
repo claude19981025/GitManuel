@@ -13,7 +13,7 @@
 \usepackage{multicol}         % 多欄排版
 \usepackage{tikz}             % 繪圖
 \usepackage{enumitem}         % 自定義列表
-
+\usepackage{float}
 
 %中文輸入配置模塊
 %如果報錯不能編譯，請至Options -> Configure TeXstudio後，選Build，將Default Compiler設置爲支持xeCJK包的XeLatex或LuaLaTeX
@@ -45,10 +45,11 @@
 \fancyhead[R]{\thepage}
 
 \lstdefinelanguage{git}{
-	morekeywords={git, init, clone, add, mv, reset, rm, bisect, grep, log, show, status, branch, checkout, commit, diff, merge, rebase, tag, fetch, pull, push, stash},
+	morekeywords={git, init, clone, add, mv, reset, rm, bisect, grep, log, show, status, branch, checkout, commit, diff, merge, rebase, tag, fetch, pull, push, stash, remote, clean, reflog},
 	sensitive=true,
 	morecomment=[l]{//},
-	morestring=[b]"
+	%morestring=[b]", %b表示成對，意思是用成對的雙引號標示字串
+	%moredelim=**[is][\color{purple}]{--}{ }, %以--開始以-結束的代碼標紫
 }
 
 % 代碼高亮設置
@@ -64,10 +65,16 @@
 	numberstyle=\tiny\color{gray},
 	breaklines=true,
 	backgroundcolor=\color{lightgray!20},
-	captionpos=b
+	captionpos=b,
+	%moredelim=[is][\color{green}]{<}{>}, %i表示界定符也會上色，s表示成對
 }
 
 % 用於縮短高亮指令
+\newcommand{\rtext}[1]{\textcolor{red}{#1}}
+\newcommand{\btext}[1]{\textcolor{blue}{#1}}
+
+\newcommand{\yb}[1]{\colorbox{yellow}{#1}}
+
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\redcode}[1]{\textcolor{red}{\texttt{#1}}}
 
@@ -193,7 +200,7 @@ git checkout HEAD~<數字> <檔案>
 git rm <要刪的檔案> --cached
 \end{lstlisting}
 
-\section{修改\texttt{commit}}
+\section{修改\texttt{commit}與進階操作}
 \subsection{修該最新\code{commit}訊息}
 \begin{lstlisting}[language=git]
 git commit --amend -m "新訊息"
@@ -208,17 +215,19 @@ git commit --amend --no-edit
 \end{lstlisting}
 
 \subsection{拆掉\code{commit}}
-符號\code{\^{}}代表前一次，\code{\^{}\^{}}代表前兩次，以此類推。注意到，\code{reset}指令只是回到某版本的狀態，其餘版本都還留存，並沒有刪除。
-\begin{lstlisting}
+符號\code{\^{}}代表前一次，\code{\^{}\^{}}代表前兩次，以此類推。注意到，\code{reset}指令只是\rtext{回到某版本的狀態}，其餘版本都還留存，並沒有刪除。
+\begin{lstlisting}[language=git]
 //拆掉最後一次commit，以前一次的檔案覆蓋現有檔案
 git reset <commit前6碼>^
 git reset master^
 git reset HEAD^
 //指定要拆到第幾個commit
 git reset <commit前6碼>
+//進入互動模式編輯commit
+git rebase -i <SHA-1前七碼>
 \end{lstlisting}
 
-\subsection{\code{Reset}的三種模式}
+\subsection{\code{reset}的三種模式}
 \begin{table}[h]
 	\centering
 	\begin{tabular}{|l|c|c|c|}
@@ -235,6 +244,30 @@ git reset <commit前6碼>
 	\caption{reset模式}
 \end{table}
 
+\subsection{將\code{reset}還原}
+已知\code{reset}不刪除檔案，因此只要記得SHA-1的前7碼，完全可以直接\code{reset}回去。若忘記可以使用\code{reflog}指令察看
+\begin{lstlisting}[language=git]
+git reflog
+//這個也可以做到
+git log -g
+\end{lstlisting}
+
+\section{分支\code{branch}}
+第一個\code{commiit}即建立在預設的分支\code{master}上
+\subsection{基本操作}
+\begin{lstlisting}[language=git]
+//新增分支
+git branch <分支>
+//刪除分支 
+git branch -d <branch name> //刪除分支，但合併的不可刪除
+git branch -D <branch name> //刪除分支，但強迫刪除未合併分支
+//改名
+git branch -m <old name> <new name> //幫分支改名
+//切換分支
+git checkout <branch name>
+//合併分支
+git merge <要合併的分支> 
+\end{lstlisting}
 
 \section{疑難雜症}
 
@@ -259,6 +292,7 @@ git clean -fX
 \end{lstlisting}
 
 \section{與GitHub專案同步}
+\subsection{push和pull}
 首先至GitHub網站創建專案 (repository)，然後在本地要同步的，已經受git版控的資料夾加上遠端節點：
 \begin{lstlisting}[language=git]
 git remote add origin <*.git>
@@ -268,10 +302,46 @@ git remote add origin <*.git>
 然後就可以把本地端的專案推送到Github了。使用\texttt{push}指令推送特定分支到origin。注意到，若origin存在同名分支，即更新進度，不存在則創建分支
 \begin{lstlisting}[language=git]
 git push -u origin <your branch>
+\\
+git push origin <本地端分支名> :<遠端分支名>
 \end{lstlisting}
-
+\subsection{大型專案常用指令}
+沒有存取權時，先去\code{GitHub}\code{fork}一份到自己的\code{repository}
+\begin{lstlisting}[language=git]
+//複製一份repository到本地
+git clone <url>
+如何同步fork過來的專案
+git remote -v //查看遠端節點有無原作的節點
+git remote add <在地節點名> <原作節點url>
+git fetch <在地節點名>
+git merge <在地節點名>/要合併的節點
+//刪除遠端分支
+git push origin :<要刪除的分支名>
+\end{lstlisting}
 \section{圖表示例}
-	
+
+\subsection{如何正確命名分支}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{||l|l||}
+		\hline
+		分支名稱 & 說明\\
+		\hline
+		\textbf{Master} & 穩定，可以隨時使用的版本，不會直接commit，版本標籤通常打在此分支上\\
+		\hline
+		\textbf{Hotfix} & 緊急問題修復開的分支，修好記得merge到Master和Develop。\\
+		\hline
+		\textbf{Release} & 上線前的測試板，好了一樣要併到Develop，避免日後開發需要\\
+		\hline
+		\textbf{Feature} & 新增功能時，從Feature拿來的\\
+		\hline
+	\end{tabular}
+	\caption{分支命名範式}
+	\label{tab:example}
+\end{table}
+
+
+
 \subsection{插入圖片}
 \begin{figure}[h]
 	\centering
