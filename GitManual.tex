@@ -44,8 +44,16 @@
 \fancyhead[L]{Your Name} %[位置][內容] 位置：E(偶數頁)O(奇數頁)LCR
 \fancyhead[R]{\thepage}
 
+\lstdefinelanguage{git}{
+	morekeywords={git, init, clone, add, mv, reset, rm, bisect, grep, log, show, status, branch, checkout, commit, diff, merge, rebase, tag, fetch, pull, push, stash},
+	sensitive=true,
+	morecomment=[l]{//},
+	morestring=[b]"
+}
+
 % 代碼高亮設置
 \lstset{
+	language=git,
 	basicstyle=\ttfamily\small,
 	keywordstyle=\color{blue}\bfseries,
 	commentstyle=\color{green},
@@ -61,9 +69,15 @@
 
 % 用於縮短高亮指令
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}}
+\newcommand{\redcode}[1]{\textcolor{red}{\texttt{#1}}}
 
-\title{A4繁體中文模板}
+\newcommand{\gitcode}[1]{
+	\begin{lstlisting}[language=c++]
+		#1
+	\end{lstlisting}
+}
+
+\title{Git使用筆記繁中版}
 \author{盧永鈞}
 \date{\today}
 
@@ -79,7 +93,183 @@
 	
 \section{簡介}
 這是簡介部分，簡要介紹文檔的背景和目的。Enslish font is ok
-	
+
+\section{基本操作}
+\subsection{設置作者}
+使用\texttt{config}指令設定作者和信箱
+\begin{lstlisting}[language=git]
+git config --global.user.name "<name>"
+git config --global.user.email "<email>"
+git config --list //檢視設定
+\end{lstlisting}
+也可以至家目錄的git設定檔\texttt{~/.gitconfig}修改
+\\\\
+將\texttt{global}替換成\texttt{local}，可以爲每個專案可以設置獨立的作者
+\subsection{設置指令縮寫}
+\begin{lstlisting}[language=git]
+git config --global alias.<指令別名> <指令>
+git config --global alias.l "log --oneline --graph" //簡化命令
+\end{lstlisting}
+\subsection{初始化專案}
+使用\texttt{init}指令使資料夾被Git控制
+\begin{lstlisting}[language=git]
+git init
+\end{lstlisting}
+\subsection{察看目錄狀態}
+\begin{lstlisting}[language=git]
+git status
+\end{lstlisting}
+\subsection{建立\texttt{commit}的標準流程}
+先將想要追蹤的檔案加入暫存區 (Staging Area, index)
+\begin{lstlisting}[language=git]
+//將檔案加入暫存區 
+git add <檔案>
+//支持萬用字符，僅加入特定類型檔案
+git add *.檔案後綴
+//將所有檔案加入暫存區
+git add --all
+//在資料夾根目錄使用，等效於--all
+git add .
+\end{lstlisting}
+然後就可以\texttt{commit}，即把檔案加入儲存庫 (Repository)。
+\begin{lstlisting}[language=git]
+git commit -m "說明"
+\end{lstlisting}
+注意到，\texttt{commit}只會對加入暫存區的檔案作「備份」。然而，也可以在暫存區爲空的情況下\texttt{commit}
+\begin{lstlisting}[language=git]
+git commit --allow-empty -m "<說明>"
+\end{lstlisting}
+\subsection{察看\texttt{commit}歷史記錄}
+使用\texttt{log}指令察看\texttt{commit}記錄
+\begin{lstlisting}[language=git]
+git log
+git log --oneline
+git log --oneline --graph
+\end{lstlisting}
+也可以用特定條件篩選\texttt{commit}記錄
+\begin{lstlisting}[language=git]
+//用作者篩選
+git log --auhtor="作者"
+//用commit內容篩選
+git log --grep="關鍵字"
+//用檔案內容篩選
+git log -S "關鍵字"
+//檢視特定檔案的commit記錄
+git log <檔案>
+//檢視特定檔案的修改記錄
+git log -p <檔案>
+//查看特定檔案每一行/特定行數的作者
+git blame <檔案>
+git blame -L <開始行數>,<結束行數> <檔案> 
+\end{lstlisting}
+
+\subsection{在Git中刪除檔案}
+若使用linux自帶的的\texttt{rm}，還得手動加入暫存區，用Git自帶的\texttt{rm}指令可以結合上述兩個操作：
+\begin{lstlisting}[language=git]
+git rm <要刪除的檔案>
+\end{lstlisting}
+
+\subsection{救回誤刪的檔案}
+若只是檔案誤刪，使用\texttt{checkout}指令，從暫存區取用資料復原
+\begin{lstlisting}[language=git]
+git checkout <誤刪的檔案> 
+git checkout . //救回所有刪除的檔案
+\end{lstlisting}
+
+\subsection{把檔案還原到特定commit}
+將<檔案>還原到<數字>個版本前的\code{commit}
+\begin{lstlisting}[language=git]
+git checkout HEAD~<數字> <檔案>
+\end{lstlisting}
+
+\subsection{在Git中變更檔名}
+\begin{lstlisting}[language=git]
+	git mv <舊黨名> <新黨名>
+\end{lstlisting}
+
+\subsection{取消版控}
+使用Git的\texttt{rm}指令，可以將檔案解除版控而不刪除
+\begin{lstlisting}[language=git]
+git rm <要刪的檔案> --cached
+\end{lstlisting}
+
+\section{修改\texttt{commit}}
+\subsection{修該最新\code{commit}訊息}
+\begin{lstlisting}[language=git]
+git commit --amend -m "新訊息"
+\end{lstlisting}
+
+\subsection{新增檔案到最新的\code{commit}}
+\begin{lstlisting}[language=git]
+//先加到緩存區
+git add <要新增的檔案>
+//加到最後一次commit
+git commit --amend --no-edit
+\end{lstlisting}
+
+\subsection{拆掉\code{commit}}
+符號\code{\^{}}代表前一次，\code{\^{}\^{}}代表前兩次，以此類推。注意到，\code{reset}指令只是回到某版本的狀態，其餘版本都還留存，並沒有刪除。
+\begin{lstlisting}
+//拆掉最後一次commit，以前一次的檔案覆蓋現有檔案
+git reset <commit前6碼>^
+git reset master^
+git reset HEAD^
+//指定要拆到第幾個commit
+git reset <commit前6碼>
+\end{lstlisting}
+
+\subsection{\code{Reset}的三種模式}
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|l|c|c|c|}
+		\hline
+		模式 & mixed (預設) & soft & hard \\
+		\hline
+		工作目錄 & 不變 & 不變 & 丟掉 \\
+		\hline
+		暫存區 & 丟掉 & 不變 & 丟掉 \\
+		\hline
+		\code{commit}拆出來的檔案 & 丟回工作目錄 & 丟回暫存區 & 完全丟掉 \\
+		\hline
+	\end{tabular}
+	\caption{reset模式}
+\end{table}
+
+
+\section{疑難雜症}
+
+\subsection{Git不保存空目錄}
+在該目錄中新增\code{.gitkeep}檔案即可
+
+\subsection{讓Git忽略特定檔案}
+在與\code{.git}同級的資料夾新增\code{.gitignore}檔案，加入要忽略的檔案即可。
+\begin{lstlisting}[language=git]
+#忽略特定檔案
+<檔名>
+
+#忽略特定副檔名的檔案
+*.<副檔名>
+
+#忽略特定資料夾的檔案
+<資料夾名稱>
+\end{lstlisting}
+注意到，在建立.gitignore檔案前就存在的，但在忽略清單中的檔案不會被忽略！可以在建立\code{.gitignore}後，用\code{clean}強制清除：
+\begin{lstlisting}[language=git]
+git clean -fX
+\end{lstlisting}
+
+\section{與GitHub專案同步}
+首先至GitHub網站創建專案 (repository)，然後在本地要同步的，已經受git版控的資料夾加上遠端節點：
+\begin{lstlisting}[language=git]
+git remote add origin <*.git>
+\end{lstlisting}
+注意到，遠端節點不一定要命名成origin，這只是一種慣例。
+\\\\
+然後就可以把本地端的專案推送到Github了。使用\texttt{push}指令推送特定分支到origin。注意到，若origin存在同名分支，即更新進度，不存在則創建分支
+\begin{lstlisting}[language=git]
+git push -u origin <your branch>
+\end{lstlisting}
+
 \section{圖表示例}
 	
 \subsection{插入圖片}
