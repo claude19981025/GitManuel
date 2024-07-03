@@ -292,19 +292,53 @@ git clean -fX
 \end{lstlisting}
 
 \section{與GitHub專案同步}
-\subsection{push和pull}
+\subsection{\texttt{push}}
 首先至GitHub網站創建專案 (repository)，然後在本地要同步的，已經受git版控的資料夾加上遠端節點：
 \begin{lstlisting}[language=git]
-git remote add origin <*.git>
+\\查看有無遠端節點
+git remote -v
+\\檢視遠端節點的詳細資料
+git remote show origin
+\\新增節點
+git remote add origin <URL>
+\\更換現有節點
+git remote set-url origin <新url>
 \end{lstlisting}
-注意到，遠端節點不一定要命名成origin，這只是一種慣例。
+注意到，遠端節點不一定要命名成\texttt{origin}，這只是一種慣例。而\texttt{origin}即爲代表\texttt{URL}的變數
 \\\\
 然後就可以把本地端的專案推送到Github了。使用\texttt{push}指令推送特定分支到origin。注意到，若origin存在同名分支，即更新進度，不存在則創建分支
 \begin{lstlisting}[language=git]
-git push -u origin <your branch>
-\\
-git push origin <本地端分支名> :<遠端分支名>
+//將本地分支推送到同名的遠端分支
+git push -u origin <本地分支>
+//將本地分支推送到指定名稱的遠端分支
+git push origin <本地分支>:<遠端分支>
 \end{lstlisting}
+上述命令的\texttt{u}代表\texttt{upstream}，意思是設置遠端的\texttt{origin\textbackslash master}爲上游節點，下次只需輸入\texttt{push}就會推送一樣的本地分支到遠端節點上。
+\subsection{\texttt{pull}}
+\texttt{pull}即爲\texttt{fetch}和\texttt{merge}的結合
+\begin{lstlisting}[language=git]
+//從URL拉取
+git pull <REPOSITORY的URL> 
+
+git pull <遠端別名> <遠端分支名>:<本地分支名>
+git pull <遠端別名> <遠端分支名>
+\end{lstlisting}
+
+\subsection{fetch}
+\texttt{fetch}指令就是將遠端資料庫的更動抓回本地端，因此若有新的\texttt{commit}，\texttt{origin\textbackslash master}和\texttt{origin\textbackslash head}會變動
+\begin{lstlisting}[language=git]
+//抓取遠端資料庫信息
+git fetch
+//更新遠端數據庫所有更新
+git fetch <遠端別名> <遠端分支名>
+//更新遠端數據庫特定更新
+git fetch <遠端別名>
+\end{lstlisting}
+更新完後，使用\texttt{merge}指令即可將進度更新
+\begin{lstlisting}[language=git]
+git merge origin/<遠端分支>
+\end{lstlisting}
+
 \subsection{大型專案常用指令}
 沒有存取權時，先去\code{GitHub}\code{fork}一份到自己的\code{repository}
 \begin{lstlisting}[language=git]
@@ -313,11 +347,14 @@ git clone <url>
 如何同步fork過來的專案
 git remote -v //查看遠端節點有無原作的節點
 git remote add <在地節點名> <原作節點url>
+
 git fetch <在地節點名>
 git merge <在地節點名>/要合併的節點
+
 //刪除遠端分支
 git push origin :<要刪除的分支名>
 \end{lstlisting}
+
 \section{圖表示例}
 
 \subsection{如何正確命名分支}
